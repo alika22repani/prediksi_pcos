@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perbandingan Model — PCOScan</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --rose-50:#FDF2F4; --rose-100:#FCE4EA; --rose-200:#F9C5D1;
+            --rose-400:#E8839A; --rose-600:#C2556D; --rose-800:#8B2D42;
+            --text-primary:#1C1219; --text-secondary:#5C4650; --text-muted:#9C8490;
+            --border:rgba(180,120,140,0.15); --border-strong:rgba(180,120,140,0.28);
+            --white:#FFFFFF;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family:'DM Sans', sans-serif;
+            background:var(--rose-50);
+            min-height:100vh;
+            color:var(--text-primary);
+        }
+
+        body::before {
+            content:''; position:fixed; inset:0;
+            background-image:radial-gradient(circle at 20% 10%, rgba(232,131,154,0.07) 0%, transparent 50%);
+            pointer-events:none; z-index:0;
+        }
+
+        .page-wrap {
+            position:relative; z-index:1;
+            max-width:1000px; margin:0 auto;
+            padding:48px 24px 80px;
+        }
+
+        .site-header {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:48px;
+        }
+
+        .logo { display:flex; align-items:center; gap:12px; text-decoration:none; }
+        .logo-mark {
+            width:40px; height:40px; background:var(--rose-600);
+            border-radius:12px; display:flex; align-items:center; justify-content:center;
+        }
+        .logo-mark i { color:white; font-size:18px; }
+        .logo-text {
+            font-family:'DM Serif Display', serif; font-size:1.4rem;
+            color:var(--rose-800); letter-spacing:-0.01em;
+        }
+
+        .btn-outline {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:9px 20px; border-radius:12px;
+            font-family:'DM Sans', sans-serif; font-size:0.82rem; font-weight:600;
+            cursor:pointer; text-decoration:none;
+            background:white; color:var(--rose-600);
+            border:1.5px solid var(--border-strong);
+            transition:all 0.2s ease;
+        }
+
+        .btn-outline:hover {
+            border-color:var(--rose-400);
+            background:var(--rose-50);
+        }
+
+        .page-title { text-align:center; margin-bottom:48px; }
+        .page-title h1 {
+            font-family:'DM Serif Display', serif;
+            font-size:clamp(1.8rem,4vw,2.8rem);
+            letter-spacing:-0.02em; margin-bottom:8px;
+        }
+        .page-title p { font-size:0.9rem; color:var(--text-muted); }
+
+        /* champion card */
+        .champion {
+            background:var(--rose-800);
+            border-radius:20px; padding:32px;
+            margin-bottom:28px;
+            display:flex; align-items:center; justify-content:space-between;
+            flex-wrap:wrap; gap:20px;
+            animation:fadeUp 0.4s ease both;
+        }
+
+        .champion-label {
+            font-size:0.72rem; font-weight:600; letter-spacing:0.08em;
+            text-transform:uppercase; color:var(--rose-200); margin-bottom:6px;
+        }
+
+        .champion-name {
+            font-family:'DM Serif Display', serif;
+            font-size:1.8rem; color:white; margin-bottom:4px;
+        }
+
+        .champion-desc { font-size:0.85rem; color:var(--rose-200); }
+
+        .champion-stat {
+            text-align:right;
+        }
+
+        .champion-stat .big-num {
+            font-family:'DM Serif Display', serif;
+            font-size:2.8rem; color:white; line-height:1;
+        }
+
+        .champion-stat .stat-label {
+            font-size:0.75rem; color:var(--rose-200); margin-top:4px;
+        }
+
+        /* card */
+        .card {
+            background:var(--white);
+            border:1px solid var(--border);
+            border-radius:20px;
+            padding:32px;
+            margin-bottom:24px;
+            animation:fadeUp 0.4s ease 0.1s both;
+        }
+
+        .card-header {
+            display:flex; align-items:center; gap:12px;
+            margin-bottom:28px; padding-bottom:18px;
+            border-bottom:1px solid var(--border);
+        }
+
+        .card-icon {
+            width:36px; height:36px; background:var(--rose-100);
+            border-radius:10px; display:flex; align-items:center; justify-content:center;
+        }
+
+        .card-icon i { color:var(--rose-600); font-size:15px; }
+        .card-title { font-family:'DM Serif Display', serif; font-size:1.1rem; }
+
+        /* table */
+        .metrics-table { width:100%; border-collapse:collapse; }
+
+        .metrics-table thead th {
+            background:var(--rose-50);
+            font-size:0.78rem; font-weight:600;
+            color:var(--text-secondary);
+            text-transform:uppercase; letter-spacing:0.05em;
+            padding:10px 16px; text-align:center;
+            border-bottom:1px solid var(--border-strong);
+        }
+
+        .metrics-table thead th:first-child { text-align:left; }
+
+        .metrics-table tbody td {
+            padding:12px 16px; text-align:center;
+            font-size:0.875rem; color:var(--text-secondary);
+            border-bottom:1px solid var(--border);
+        }
+
+        .metrics-table tbody td:first-child {
+            text-align:left; font-weight:600; color:var(--text-primary);
+        }
+
+        .metrics-table tbody tr:last-child td { border-bottom:none; }
+        .metrics-table tbody tr:hover td { background:var(--rose-50); }
+
+        .best-cell {
+            color:var(--rose-800) !important;
+            font-weight:700 !important;
+        }
+
+        .best-cell::after {
+            content:' ★';
+            font-size:0.7em;
+            color:var(--rose-400);
+        }
+
+        /* chart wrap */
+        .chart-wrap { max-height:360px; }
+
+        /* conclusion */
+        .conclusion {
+            background:var(--rose-50);
+            border:1px solid var(--border-strong);
+            border-left:4px solid var(--rose-600);
+            border-radius:0 14px 14px 0;
+            padding:24px 28px;
+        }
+
+        .conclusion p { font-size:0.9rem; color:var(--text-secondary); line-height:1.7; margin-bottom:10px; }
+        .conclusion p:last-child { margin-bottom:0; color:var(--text-muted); font-size:0.83rem; }
+
+        .btn-primary {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:12px 28px; border-radius:12px;
+            font-family:'DM Sans', sans-serif; font-size:0.875rem; font-weight:600;
+            cursor:pointer; text-decoration:none; border:none;
+            background:var(--rose-600); color:white;
+            transition:all 0.2s ease; margin-top:24px;
+        }
+
+        .btn-primary:hover {
+            background:var(--rose-800);
+            transform:translateY(-1px);
+            box-shadow:0 6px 20px rgba(194,85,109,0.25);
+        }
+
+        @keyframes fadeUp {
+            from { opacity:0; transform:translateY(16px); }
+            to { opacity:1; transform:translateY(0); }
+        }
+
+        @media (max-width:768px) {
+            .page-wrap { padding:24px 16px 60px; }
+            .champion { text-align:center; justify-content:center; }
+            .champion-stat { text-align:center; }
+            .metrics-table { font-size:0.78rem; }
+            .metrics-table thead th, .metrics-table tbody td { padding:8px 10px; }
+            .card { padding:24px 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <header class="site-header">
+        <a href="/" class="logo">
+            <div class="logo-mark"><i class="fas fa-heartbeat"></i></div>
+            <span class="logo-text">PCOScan</span>
+        </a>
+        <a href="/" class="btn-outline">
+            <i class="fas fa-arrow-left"></i> Kembali
+        </a>
+    </header>
+
+    <div class="page-title">
+        <h1>Perbandingan Performa Model</h1>
+        <p>Evaluasi komprehensif 5 algoritma AI untuk prediksi PCOS</p>
+    </div>
+
+    <!-- Champion -->
+    <div class="champion" id="championCard">
+        <div>
+            <div class="champion-label">🏆 Model Terbaik</div>
+            <div class="champion-name" id="championName">—</div>
+            <div class="champion-desc">Akurasi tertinggi dari seluruh model yang dievaluasi</div>
+        </div>
+        <div class="champion-stat">
+            <div class="big-num" id="championAcc">—</div>
+            <div class="stat-label">Accuracy Score</div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon"><i class="fas fa-table"></i></div>
+            <h2 class="card-title">Metrik Evaluasi</h2>
+        </div>
+        <table class="metrics-table">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1-Score</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- Chart -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon"><i class="fas fa-chart-bar"></i></div>
+            <h2 class="card-title">Visualisasi Akurasi</h2>
+        </div>
+        <div class="chart-wrap">
+            <canvas id="metricsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Conclusion -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon"><i class="fas fa-lightbulb"></i></div>
+            <h2 class="card-title">Kesimpulan</h2>
+        </div>
+        <div class="conclusion">
+            <p>
+                Berdasarkan hasil evaluasi, model <strong id="bestName">—</strong> menunjukkan performa terbaik dengan akurasi <strong id="bestAcc">—</strong>. Model ini mampu mengklasifikasikan pasien PCOS dan non-PCOS secara konsisten menggunakan data klinis yang tersedia.
+            </p>
+            <p>
+                Perbedaan performa antar model mencerminkan karakteristik masing-masing algoritma. Logistic Regression unggul dalam interpretabilitas dan generalisasi, sementara model deep learning (ANN & RNN) lebih fleksibel dalam menangkap pola non-linear. Konsensus dari kelima model digunakan sebagai basis prediksi akhir.
+            </p>
+            <p>
+                Catatan: Evaluasi dilakukan pada dataset yang sama. Validasi klinis lebih lanjut diperlukan sebelum implementasi di lingkungan medis nyata.
+            </p>
+        </div>
+        <a href="/" class="btn-primary">
+            <i class="fas fa-flask"></i>
+            Coba Prediksi Sekarang
+        </a>
+    </div>
+
+</div>
+
+<script id="page-data" type="application/json">
+{
+    "metrics": {{ metrics | tojson }},
+    "best_model": "{{ best_model }}",
+    "best_accuracy": {{ best_accuracy_value }}
+}
+</script>
+
+<script>
+var pageData = JSON.parse(document.getElementById('page-data').textContent);
+var metricsList = pageData.metrics;
+var bestModel = pageData.best_model;
+var bestAcc = pageData.best_accuracy;
+
+// Champion
+document.getElementById('championName').textContent = bestModel;
+document.getElementById('championAcc').textContent = (bestAcc * 100).toFixed(2) + '%';
+document.getElementById('bestName').textContent = bestModel;
+document.getElementById('bestAcc').textContent = (bestAcc * 100).toFixed(2) + '%';
+
+// Table
+var tbody = document.getElementById('tableBody');
+metricsList.forEach(function(m) {
+    var tr = tbody.insertRow();
+    tr.insertCell(0).innerHTML = m.name;
+    ['accuracy','precision','recall','f1'].forEach(function(metric) {
+        var td = tr.insertCell(-1);
+        td.textContent = (m[metric] * 100).toFixed(2) + '%';
+        if (m.name === bestModel) td.className = 'best-cell';
+    });
+});
+
+// Chart
+var chartCtx = document.getElementById('metricsChart');
+if (chartCtx) {
+    var labels = metricsList.map(function(m){ return m.name; });
+    var metrics = ['accuracy','precision','recall','f1'];
+    var metricLabels = ['Accuracy','Precision','Recall','F1-Score'];
+    var colors = ['#C2556D','#E8839A','#8B2D42','#F9C5D1'];
+
+    new Chart(chartCtx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: metrics.map(function(metric, i) {
+                return {
+                    label: metricLabels[i],
+                    data: metricsList.map(function(m){ return +(m[metric]*100).toFixed(2); }),
+                    backgroundColor: colors[i],
+                    borderRadius: 5,
+                    borderSkipped: false,
+                };
+            })
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: { family: 'DM Sans', size: 12 },
+                        usePointStyle: true,
+                        pointStyleWidth: 8,
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(c) { return c.dataset.label + ': ' + c.parsed.y.toFixed(2) + '%'; }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    min: 0, max: 100,
+                    ticks: {
+                        callback: function(v){ return v + '%'; },
+                        font: { family: 'DM Sans', size: 12 }
+                    },
+                    grid: { color: 'rgba(180,120,140,0.1)' }
+                },
+                x: {
+                    ticks: { font: { family: 'DM Sans', size: 11 } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>

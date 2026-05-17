@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Prediksi — PCOScan</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --rose-50: #FDF2F4;
+            --rose-100: #FCE4EA;
+            --rose-200: #F9C5D1;
+            --rose-400: #E8839A;
+            --rose-600: #C2556D;
+            --rose-800: #8B2D42;
+            --green-50: #F0FDF4;
+            --green-100: #DCFCE7;
+            --green-400: #4ADE80;
+            --green-600: #16A34A;
+            --green-800: #166534;
+            --text-primary: #1C1219;
+            --text-secondary: #5C4650;
+            --text-muted: #9C8490;
+            --border: rgba(180,120,140,0.15);
+            --border-strong: rgba(180,120,140,0.28);
+            --white: #FFFFFF;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--rose-50);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        body::before {
+            content:'';
+            position:fixed; inset:0;
+            background-image: radial-gradient(circle at 20% 10%, rgba(232,131,154,0.07) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 80%, rgba(194,85,109,0.05) 0%, transparent 50%);
+            pointer-events:none; z-index:0;
+        }
+
+        .page-wrap {
+            position:relative; z-index:1;
+            max-width:1000px;
+            margin:0 auto;
+            padding:48px 24px 80px;
+        }
+
+        /* header */
+        .site-header {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:48px;
+        }
+
+        .logo { display:flex; align-items:center; gap:12px; text-decoration:none; }
+        .logo-mark {
+            width:40px; height:40px; background:var(--rose-600);
+            border-radius:12px; display:flex; align-items:center; justify-content:center;
+        }
+        .logo-mark i { color:white; font-size:18px; }
+        .logo-text {
+            font-family:'DM Serif Display', serif; font-size:1.4rem;
+            color:var(--rose-800); letter-spacing:-0.01em;
+        }
+
+        /* page title */
+        .page-title { text-align:center; margin-bottom:40px; }
+        .page-title h1 {
+            font-family:'DM Serif Display', serif;
+            font-size:clamp(1.8rem,4vw,2.8rem);
+            color:var(--text-primary);
+            letter-spacing:-0.02em;
+            margin-bottom:8px;
+        }
+        .page-title p { font-size:0.9rem; color:var(--text-muted); }
+
+        /* consensus banner */
+        .consensus-banner {
+            border-radius:20px;
+            padding:36px 40px;
+            margin-bottom:28px;
+            display:flex; align-items:center; gap:28px;
+            animation: fadeUp 0.5s ease both;
+        }
+
+        .consensus-banner.positif {
+            background: linear-gradient(135deg, #FEF2F2 0%, #FDE8EC 100%);
+            border: 1.5px solid rgba(194,85,109,0.3);
+        }
+
+        .consensus-banner.negatif {
+            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+            border: 1.5px solid rgba(22,163,74,0.3);
+        }
+
+        .consensus-icon {
+            width:64px; height:64px; flex-shrink:0;
+            border-radius:50%; display:flex; align-items:center; justify-content:center;
+            font-size:28px;
+        }
+
+        .consensus-banner.positif .consensus-icon { background:rgba(194,85,109,0.12); color:var(--rose-600); }
+        .consensus-banner.negatif .consensus-icon { background:rgba(22,163,74,0.12); color:var(--green-600); }
+
+        .consensus-text h2 {
+            font-family:'DM Serif Display', serif;
+            font-size:1.5rem; margin-bottom:6px;
+        }
+
+        .consensus-banner.positif .consensus-text h2 { color:var(--rose-800); }
+        .consensus-banner.negatif .consensus-text h2 { color:var(--green-800); }
+
+        .consensus-text p { font-size:0.875rem; color:var(--text-secondary); line-height:1.6; }
+
+        .vote-pills {
+            margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;
+        }
+
+        .vote-pill {
+            font-size:0.75rem; font-weight:600; padding:4px 12px;
+            border-radius:100px; letter-spacing:0.02em;
+        }
+
+        .pill-pos { background:var(--rose-100); color:var(--rose-800); }
+        .pill-neg { background:var(--green-100); color:var(--green-800); }
+
+        /* motivational quote */
+        .motivation-card {
+            border-radius:16px; padding:28px 32px;
+            margin-bottom:28px;
+            position:relative; overflow:hidden;
+            animation: fadeUp 0.6s ease 0.1s both;
+        }
+
+        .motivation-card.positif {
+            background: var(--rose-800);
+            color: white;
+        }
+
+        .motivation-card.negatif {
+            background: var(--green-800);
+            color: white;
+        }
+
+        .motivation-card::before {
+            content:'\201C';
+            position:absolute; top:-20px; left:20px;
+            font-family:'DM Serif Display', serif;
+            font-size:10rem; opacity:0.08; line-height:1;
+            color:white;
+        }
+
+        .motivation-card p {
+            font-family:'DM Serif Display', serif;
+            font-size:1.05rem; line-height:1.7;
+            position:relative; z-index:1;
+        }
+
+        .motivation-card .motivation-sub {
+            font-family:'DM Sans', sans-serif;
+            font-size:0.8rem; margin-top:12px;
+            opacity:0.75;
+        }
+
+        /* card */
+        .card {
+            background:var(--white);
+            border:1px solid var(--border);
+            border-radius:20px;
+            padding:32px;
+            margin-bottom:24px;
+            animation: fadeUp 0.5s ease 0.15s both;
+        }
+
+        .card-header {
+            display:flex; align-items:center; gap:12px;
+            margin-bottom:28px; padding-bottom:18px;
+            border-bottom:1px solid var(--border);
+        }
+
+        .card-icon {
+            width:36px; height:36px; background:var(--rose-100);
+            border-radius:10px; display:flex; align-items:center; justify-content:center;
+        }
+        .card-icon i { color:var(--rose-600); font-size:15px; }
+        .card-title { font-family:'DM Serif Display', serif; font-size:1.1rem; }
+
+        /* model grid */
+        .model-grid {
+            display:grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap:16px;
+        }
+
+        .model-card {
+            background:var(--rose-50);
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:20px 16px;
+            text-align:center;
+            transition:transform 0.2s ease;
+        }
+
+        .model-card:hover { transform:translateY(-3px); }
+
+        .model-card.positif { border-left:3px solid var(--rose-600); }
+        .model-card.negatif { border-left:3px solid var(--green-600); }
+
+        .model-badge {
+            display:inline-block; font-size:0.7rem; font-weight:600;
+            padding:3px 10px; border-radius:100px; margin-bottom:10px;
+            letter-spacing:0.04em; text-transform:uppercase;
+        }
+
+        .badge-pos { background:var(--rose-100); color:var(--rose-800); }
+        .badge-neg { background:var(--green-100); color:var(--green-800); }
+
+        .model-name { font-size:0.82rem; color:var(--text-secondary); margin-bottom:6px; font-weight:500; }
+
+        .model-prob-bar {
+            height:4px; background:var(--rose-100);
+            border-radius:100px; overflow:hidden; margin:10px 0 6px;
+        }
+
+        .model-prob-fill {
+            height:100%; border-radius:100px;
+            transition:width 0.8s ease;
+        }
+
+        .fill-pos { background:var(--rose-600); }
+        .fill-neg { background:var(--green-600); }
+
+        .model-prob-val { font-size:0.78rem; color:var(--text-muted); }
+
+        /* chart */
+        .chart-wrap { max-height:340px; }
+
+        /* download btn */
+        .btn-row {
+            display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+            margin-top:32px;
+        }
+
+        .btn {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:12px 28px; border-radius:12px;
+            font-family:'DM Sans', sans-serif; font-size:0.875rem; font-weight:600;
+            cursor:pointer; text-decoration:none; border:none;
+            transition:all 0.2s ease;
+        }
+
+        .btn-primary {
+            background:var(--rose-600); color:white;
+        }
+
+        .btn-primary:hover {
+            background:var(--rose-800);
+            transform:translateY(-1px);
+            box-shadow:0 6px 20px rgba(194,85,109,0.25);
+        }
+
+        .btn-outline {
+            background:white; color:var(--rose-600);
+            border:1.5px solid var(--border-strong);
+        }
+
+        .btn-outline:hover {
+            border-color:var(--rose-400);
+            background:var(--rose-50);
+        }
+
+        .btn-download {
+            background:var(--text-primary); color:white;
+        }
+
+        .btn-download:hover {
+            background:#2d1a22;
+            transform:translateY(-1px);
+            box-shadow:0 6px 20px rgba(28,18,25,0.2);
+        }
+
+        @keyframes fadeUp {
+            from { opacity:0; transform:translateY(16px); }
+            to { opacity:1; transform:translateY(0); }
+        }
+
+        @media (max-width:768px) {
+            .page-wrap { padding:24px 16px 60px; }
+            .consensus-banner { flex-direction:column; text-align:center; padding:28px 24px; }
+            .model-grid { grid-template-columns:1fr 1fr; }
+            .card { padding:24px 18px; }
+            .btn-row { flex-direction:column; }
+            .btn { width:100%; justify-content:center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <header class="site-header">
+        <a href="/" class="logo">
+            <div class="logo-mark"><i class="fas fa-heartbeat"></i></div>
+            <span class="logo-text">PCOScan</span>
+        </a>
+        <a href="/compare" class="btn btn-outline" style="padding:9px 20px;font-size:0.82rem;">
+            <i class="fas fa-chart-bar"></i> Perbandingan Model
+        </a>
+    </header>
+
+    <div class="page-title">
+        <h1>Hasil Analisis PCOS</h1>
+        <p>Berdasarkan {{ total_model }} model kecerdasan buatan</p>
+    </div>
+
+    <!-- Consensus Banner -->
+    <div class="consensus-banner {{ consensus_class }}" id="consensusBanner">
+        <div class="consensus-icon">
+            <i class="fas {% if consensus_class == 'positif' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+        </div>
+        <div class="consensus-text">
+            <h2>{{ consensus_text }}</h2>
+            <p>
+                {% if consensus_class == 'positif' %}
+                Mayoritas model AI mengindikasikan adanya kemungkinan PCOS. Segera konsultasikan dengan dokter kandungan atau spesialis endokrin reproduksi.
+                {% else %}
+                Mayoritas model AI tidak mendeteksi indikasi PCOS. Tetap jaga kesehatan reproduksi secara rutin.
+                {% endif %}
+            </p>
+            <div class="vote-pills">
+                <span class="vote-pill pill-pos">{{ positif_count }} Positif</span>
+                <span class="vote-pill pill-neg">{{ negatif_count }} Negatif</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Motivational Card -->
+    <div class="motivation-card {{ consensus_class }}" id="motivationCard">
+        {% if consensus_class == 'positif' %}
+        <p>
+            "Menerima diagnosis adalah langkah pertama menuju pemulihan. PCOS bisa dikelola &mdash; ribuan wanita hidup sehat, aktif, dan bahagia bersamanya. Kamu lebih kuat dari yang kamu kira."
+        </p>
+        <p class="motivation-sub">
+            <i class="fas fa-info-circle" style="margin-right:5px;"></i>
+            Langkah selanjutnya: konsultasi dokter, cek USG transvaginal, panel hormon lengkap. Dengan penanganan tepat, gejala PCOS sangat bisa dikendalikan.
+        </p>
+        {% else %}
+        <p>
+            "Kesehatan reproduksi adalah investasi jangka panjang. Hasil yang baik hari ini adalah buah dari gaya hidup yang kamu jaga &mdash; teruslah merawat diri dengan penuh kasih sayang."
+        </p>
+        <p class="motivation-sub">
+            <i class="fas fa-info-circle" style="margin-right:5px;"></i>
+            Tetap lakukan pemeriksaan rutin setiap tahun dan perhatikan perubahan siklus haid. Deteksi dini selalu lebih baik.
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Model Results -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon"><i class="fas fa-microchip"></i></div>
+            <h2 class="card-title">Hasil Per Model</h2>
+        </div>
+        <div class="model-grid" id="modelGrid"></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon"><i class="fas fa-chart-bar"></i></div>
+            <h2 class="card-title">Tingkat Keyakinan Model</h2>
+        </div>
+        <div class="chart-wrap">
+            <canvas id="confidenceChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="btn-row">
+        <button class="btn btn-download" onclick="downloadPDF()">
+            <i class="fas fa-file-medical"></i>
+            Unduh Laporan PDF
+        </button>
+        <a href="/compare" class="btn btn-outline">
+            <i class="fas fa-chart-line"></i>
+            Bandingkan Model
+        </a>
+        <a href="/" class="btn btn-primary">
+            <i class="fas fa-redo"></i>
+            Prediksi Ulang
+        </a>
+    </div>
+
+</div>
+
+<!-- Flask data -->
+<script id="page-data" type="application/json">
+{
+    "results": {{ results_json | tojson }},
+    "consensus_class": "{{ consensus_class }}",
+    "consensus_text": "{{ consensus_text }}",
+    "positif_count": {{ positif_count }},
+    "negatif_count": {{ negatif_count }},
+    "total_model": {{ total_model }}
+}
+</script>
+
+<script>
+var pageData = JSON.parse(document.getElementById('page-data').textContent);
+var modelData = JSON.parse(pageData.results);
+var consensusClass = pageData.consensus_class;
+var positifCount = pageData.positif_count;
+var negatifCount = pageData.negatif_count;
+var totalModel = pageData.total_model;
+
+// Render model cards
+var grid = document.getElementById('modelGrid');
+modelData.forEach(function(m) {
+    var card = document.createElement('div');
+    card.className = 'model-card ' + m.pred_class;
+    var prob = m.probability ? m.probability : 50;
+    var isPos = m.pred_class === 'positif';
+    card.innerHTML =
+        '<span class="model-badge ' + (isPos ? 'badge-pos' : 'badge-neg') + '">' +
+            (isPos ? 'POSITIF' : 'NEGATIF') +
+        '</span>' +
+        '<div class="model-name">' + m.name + '</div>' +
+        '<div class="model-prob-bar">' +
+            '<div class="model-prob-fill ' + (isPos ? 'fill-pos' : 'fill-neg') + '" style="width:' + prob + '%"></div>' +
+        '</div>' +
+        '<div class="model-prob-val">' + prob.toFixed(1) + '% keyakinan</div>';
+    grid.appendChild(card);
+});
+
+// Chart
+var ctx = document.getElementById('confidenceChart');
+if (ctx) {
+    var labels = modelData.map(function(m){ return m.name; });
+    var scores = modelData.map(function(m){ return m.probability || 50; });
+    var colors = modelData.map(function(m){ return m.pred_class === 'positif' ? '#C2556D' : '#16A34A'; });
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Keyakinan (%)',
+                data: scores,
+                backgroundColor: colors,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(c) { return c.parsed.y.toFixed(1) + '%'; }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    min: 0, max: 100,
+                    ticks: {
+                        callback: function(v){ return v + '%'; },
+                        font: { family: 'DM Sans', size: 12 }
+                    },
+                    grid: { color: 'rgba(180,120,140,0.1)' }
+                },
+                x: {
+                    ticks: { font: { family: 'DM Sans', size: 12 } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+// PDF Download
+function downloadPDF() {
+    var doc = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    var now = new Date();
+    var dateStr = now.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
+    var timeStr = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+
+    // ---- Header ----
+    doc.setFillColor(139, 45, 66);
+    doc.rect(0, 0, 210, 38, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('PCOScan', 20, 16);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Laporan Prediksi PCOS — Analisis Kecerdasan Buatan', 20, 24);
+    doc.setFontSize(9);
+    doc.text('Tanggal: ' + dateStr + '  |  Pukul: ' + timeStr, 20, 32);
+
+    // ---- Disclaimer ----
+    doc.setTextColor(150, 100, 110);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.text('* Laporan ini bersifat prediktif dan BUKAN pengganti diagnosis medis. Konsultasikan dengan dokter.', 20, 46);
+
+    // ---- Consensus ----
+    var isPos = consensusClass === 'positif';
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    if (isPos) {
+        doc.setTextColor(194, 85, 109);
+        doc.text('HASIL: TERINDIKASI PCOS', 20, 58);
+    } else {
+        doc.setTextColor(22, 163, 74);
+        doc.text('HASIL: TIDAK TERINDIKASI PCOS', 20, 58);
+    }
+
+    doc.setTextColor(92, 70, 80);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Konsensus: ' + positifCount + ' model POSITIF,  ' + negatifCount + ' model NEGATIF  (dari ' + totalModel + ' model)', 20, 66);
+
+    // ---- Divider ----
+    doc.setDrawColor(232, 131, 154);
+    doc.setLineWidth(0.5);
+    doc.line(20, 72, 190, 72);
+
+    // ---- Model Results Table ----
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(28, 18, 25);
+    doc.text('Detail Hasil Per Model', 20, 82);
+
+    var headers = ['Model', 'Prediksi', 'Keyakinan (%)'];
+    var colW = [70, 60, 50];
+    var startX = 20;
+    var rowH = 9;
+    var startY = 88;
+
+    // table header
+    doc.setFillColor(252, 228, 234);
+    doc.rect(startX, startY, 170, rowH, 'F');
+    doc.setTextColor(139, 45, 66);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    var cx = startX + 4;
+    headers.forEach(function(h, i) {
+        doc.text(h, cx, startY + 6);
+        cx += colW[i];
+    });
+
+    // table rows
+    modelData.forEach(function(m, idx) {
+        var y = startY + rowH * (idx + 1);
+        if (idx % 2 === 0) {
+            doc.setFillColor(253, 242, 244);
+            doc.rect(startX, y, 170, rowH, 'F');
+        }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(28, 18, 25);
+        doc.text(m.name, startX + 4, y + 6);
+        if (m.pred_class === 'positif') {
+            doc.setTextColor(194, 85, 109);
+        } else {
+            doc.setTextColor(22, 163, 74);
+        }
+        doc.text(m.prediction, startX + 4 + colW[0], y + 6);
+        doc.setTextColor(92, 70, 80);
+        doc.text((m.probability ? m.probability.toFixed(1) : '50.0') + '%', startX + 4 + colW[0] + colW[1], y + 6);
+    });
+
+    var afterTable = startY + rowH * (modelData.length + 1) + 10;
+
+    // ---- Motivational Section ----
+    doc.setDrawColor(232, 131, 154);
+    doc.line(20, afterTable, 190, afterTable);
+    afterTable += 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(28, 18, 25);
+    doc.text('Pesan untuk Anda', 20, afterTable);
+    afterTable += 8;
+
+    var quote = isPos
+        ? 'Menerima diagnosis adalah langkah pertama menuju pemulihan. PCOS bisa dikelola — ribuan wanita hidup sehat, aktif, dan bahagia bersamanya. Kamu lebih kuat dari yang kamu kira.'
+        : 'Kesehatan reproduksi adalah investasi jangka panjang. Hasil yang baik hari ini adalah buah dari gaya hidup yang kamu jaga — teruslah merawat diri dengan penuh kasih sayang.';
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10);
+    doc.setTextColor(92, 70, 80);
+    var lines = doc.splitTextToSize(quote, 165);
+    doc.text(lines, 20, afterTable);
+    afterTable += lines.length * 6 + 8;
+
+    // ---- Recommendations ----
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(28, 18, 25);
+    doc.text('Rekomendasi Tindak Lanjut', 20, afterTable);
+    afterTable += 8;
+
+    var recs = isPos
+        ? [
+            '1. Segera konsultasikan hasil ini ke dokter kandungan atau spesialis endokrin reproduksi.',
+            '2. Lakukan USG transvaginal untuk melihat morfologi ovarium secara langsung.',
+            '3. Minta panel hormon lengkap: LH, FSH, AMH, Testosteron, Insulin.',
+            '4. Terapkan pola makan rendah glikemik dan olahraga rutin 150 menit/minggu.',
+            '5. Catat siklus haid secara rutin menggunakan aplikasi pelacak siklus.'
+          ]
+        : [
+            '1. Pertahankan gaya hidup sehat: makan bergizi, istirahat cukup, kelola stres.',
+            '2. Lakukan pemeriksaan ginekologi rutin minimal 1x per tahun.',
+            '3. Pantau siklus haid — perubahan pola bisa menjadi tanda awal gangguan hormonal.',
+            '4. Hindari faktor risiko: obesitas, kurang gerak, konsumsi gula berlebih.',
+            '5. Tetap waspada jika ada gejala baru: nyeri haid hebat, haid tidak teratur, dll.'
+          ];
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(92, 70, 80);
+    recs.forEach(function(r) {
+        var rLines = doc.splitTextToSize(r, 165);
+        doc.text(rLines, 20, afterTable);
+        afterTable += rLines.length * 5.5 + 2;
+    });
+
+    // ---- Footer ----
+    doc.setFillColor(139, 45, 66);
+    doc.rect(0, 280, 210, 17, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('PCOScan — Sistem Prediksi PCOS berbasis Machine Learning | Dokumen ini hanya untuk keperluan informasi', 20, 290);
+    doc.text('Halaman 1 dari 1', 160, 290);
+
+    doc.save('Laporan_PCOS_' + now.getFullYear() + (now.getMonth()+1).toString().padStart(2,'0') + now.getDate() + '.pdf');
+}
+</script>
+</body>
+</html>
