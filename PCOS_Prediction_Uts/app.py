@@ -58,7 +58,7 @@ print("=" * 50)
 print("LOADING MODEL PCOS PREDICTOR")
 print("=" * 50)
 
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+base_dir = os.path.dirname(os.path.abspath(__file__))
 models_dir = os.path.join(base_dir, 'models')
 
 # Load scaler

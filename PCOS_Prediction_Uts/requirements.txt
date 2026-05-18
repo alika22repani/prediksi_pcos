@@ -2,6 +2,7 @@ flask
 numpy
 pandas
 scikit-learn
-tensorflow
+imbalanced-learn
+tensorflow-cpu==2.13.0
 joblib
 gunicorn
